@@ -253,3 +253,93 @@ body {
 .generate-btn i {
   margin-right: 8px;
 }
+
+/* —— L'Oréal brand colors (saved as variables so we can reuse them) —— */
+:root {
+  --loreal-red: #ff003b;
+  --loreal-gold: #e3a535;
+}
+
+/* —— product selection —— */
+
+/* Cards look clickable */
+.product-card {
+  position: relative; /* lets the check badge sit in the corner */
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.product-card:hover {
+  border-color: var(--loreal-gold);
+}
+
+/* Keyboard focus ring */
+.product-card:focus-visible {
+  outline: 3px solid var(--loreal-gold);
+  outline-offset: 2px;
+}
+
+/* A selected card gets a red border and a soft red glow */
+.product-card.selected {
+  border: 2px solid var(--loreal-red);
+  box-shadow: 0 0 0 3px rgba(255, 0, 59, 0.15);
+}
+
+/* Red check badge in the top corner — hidden until selected */
+.selected-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--loreal-red);
+  color: #fff;
+  font-size: 12px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.product-card.selected .selected-badge {
+  display: flex;
+}
+
+/* —— selected products list —— */
+.empty-selection {
+  color: #666;
+  font-size: 15px;
+}
+
+/* Each selected product shows as a rounded "chip" */
+.selected-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 8px 8px 14px;
+  border: 1px solid var(--loreal-red);
+  border-radius: 999px;
+  font-size: 14px;
+}
+
+/* The × button inside each chip */
+.remove-btn {
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 50%;
+  background: #f2f2f2;
+  color: #333;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s;
+}
+
+.remove-btn:hover,
+.remove-btn:focus-visible {
+  background: var(--loreal-red);
+  color: #fff;
+  outline: none;
+}
