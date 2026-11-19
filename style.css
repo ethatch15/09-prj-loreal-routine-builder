@@ -487,3 +487,9 @@ body {
     flex-basis: 100%;
   }
 }
+
+/* Dim the Send button while the AI is answering */
+.chat-form button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}

@@ -4,6 +4,8 @@ const productsContainer = document.getElementById("productsContainer");
 const selectedProductsList = document.getElementById("selectedProductsList");
 const chatForm = document.getElementById("chatForm");
 const chatWindow = document.getElementById("chatWindow");
+const userInput = document.getElementById("userInput");
+const sendBtn = document.getElementById("sendBtn");
 const generateRoutineBtn = document.getElementById("generateRoutine");
 
 /* The address of your Cloudflare Worker.
@@ -22,7 +24,8 @@ When the user sends you a list of selected products as JSON:
 - If a product doesn't fit a routine well, or an important step is missing (like sunscreen in the morning), say so kindly.
 
 Rules:
-- Only talk about the routine, the selected products, and beauty topics like skincare, haircare, makeup, fragrance, and grooming. Politely decline anything unrelated.
+- After the routine, the user may ask follow-up questions. Answer them using the whole conversation so far (the routine you made, the products, and anything the user has told you, like their name or skin type).
+- Only talk about the routine, the selected products, and beauty topics like skincare, haircare, makeup, fragrance, and grooming. Politely decline anything unrelated and invite a beauty question instead.
 - Do not give medical advice. For serious skin conditions, suggest seeing a dermatologist.
 - Write in plain text only. Do not use Markdown symbols like ** or #. Use numbered steps and simple headings like "Morning:" and "Evening:".
 - Keep it friendly and easy to follow.`;
@@ -343,11 +346,44 @@ generateRoutineBtn.addEventListener("click", async () => {
   chatWindow.scrollTop = chatWindow.scrollHeight;
 });
 
-/* Chat form submission handler - placeholder for OpenAI integration */
-chatForm.addEventListener("submit", (e) => {
+/* Chat form: lets the user ask follow-up questions about their routine */
+chatForm.addEventListener("submit", async (e) => {
+  // Stop the page from reloading (the default form behavior)
   e.preventDefault();
 
-  // Follow-up questions get connected in the next step.
-  // addMessage() adds a bubble instead of wiping out the routine.
-  addMessage("ai", "Follow-up questions are coming soon!");
+  // 1. Capture what the user typed (trim removes extra spaces)
+  const question = userInput.value.trim();
+  if (!question) {
+    return; // nothing typed, so do nothing
+  }
+
+  // Show the question as a bubble and add it to the conversation history
+  addMessage("user", question);
+  messages.push({ role: "user", content: question });
+
+  // Clear the box, and turn off Send while we wait for the AI
+  userInput.value = "";
+  sendBtn.disabled = true;
+  const replyDiv = addMessage("ai", "Thinking…");
+
+  try {
+    // 2. Send the WHOLE conversation (system prompt, routine, past
+    //    questions and answers) so the AI understands the follow-up
+    const reply = await sendToAI();
+    replyDiv.textContent = reply;
+
+    // 3. Save the answer in the history for the next question
+    messages.push({ role: "assistant", content: reply });
+  } catch (error) {
+    console.error("Chat request failed:", error);
+    replyDiv.textContent = `⚠️ Sorry, something went wrong: ${error.message}`;
+
+    // Remove the unanswered question so the history stays tidy
+    messages.pop();
+  }
+
+  // Turn Send back on, put the cursor back in the box, and scroll down
+  sendBtn.disabled = false;
+  userInput.focus();
+  chatWindow.scrollTop = chatWindow.scrollHeight;
 });
