@@ -9,6 +9,8 @@ const userInput = document.getElementById("userInput");
 const sendBtn = document.getElementById("sendBtn");
 const generateRoutineBtn = document.getElementById("generateRoutine");
 const clearAllBtn = document.getElementById("clearAll");
+const dirToggle = document.getElementById("dirToggle");
+const dirToggleLabel = document.getElementById("dirToggleLabel");
 
 /* The address of your Cloudflare Worker.
    The Worker holds the OpenAI API key and forwards our request to OpenAI,
@@ -29,8 +31,9 @@ Rules:
 - After the routine, the user may ask follow-up questions. Answer them using the whole conversation so far (the routine you made, the products, and anything the user has told you, like their name or skin type).
 - Only talk about the routine, the selected products, and beauty topics like skincare, haircare, makeup, fragrance, and grooming. Politely decline anything unrelated and invite a beauty question instead.
 - Do not give medical advice. For serious skin conditions, suggest seeing a dermatologist.
-- Write in plain text only. Do not use Markdown symbols like ** or #. Use numbered steps and simple headings like "Morning:" and "Evening:".
-- Keep it friendly and easy to follow.`;
+- Write in plain text only, in every language. Do not use Markdown symbols like ** or #. Use numbered steps and simple headings like "Morning:" and "Evening:".
+- Keep it friendly and easy to follow.
+- Reply in the same language the user writes in (for example, answer in Arabic if they write in Arabic).`;
 
 /* Conversation history.
    OpenAI doesn't remember past messages on its own, so we keep EVERY
@@ -353,6 +356,10 @@ function addMessage(role, text) {
   // textContent (not innerHTML) shows the text exactly as written
   messageDiv.textContent = text;
 
+  // dir="auto" lets each bubble pick its own text direction:
+  // Arabic or Hebrew text reads right-to-left, English reads left-to-right
+  messageDiv.dir = "auto";
+
   chatWindow.appendChild(messageDiv);
 
   // Scroll down so the newest message is visible
@@ -479,3 +486,30 @@ chatForm.addEventListener("submit", async (e) => {
   userInput.focus();
   chatWindow.scrollTop = chatWindow.scrollHeight;
 });
+
+/* —— Right-to-left (RTL) language support ——
+   Setting dir="rtl" on the <html> tag flips the whole layout:
+   the product grid, the selected products, and the chat bubbles.
+   We save the choice in localStorage so it stays after a reload. */
+const DIRECTION_KEY = "lorealTextDirection";
+
+function setDirection(direction) {
+  // "rtl" = right-to-left (Arabic), "ltr" = left-to-right (English)
+  document.documentElement.dir = direction;
+  document.documentElement.lang = direction === "rtl" ? "ar" : "en";
+
+  // The button always offers the OTHER option
+  dirToggleLabel.textContent =
+    direction === "rtl" ? "English (LTR)" : "العربية (RTL)";
+
+  localStorage.setItem(DIRECTION_KEY, direction);
+}
+
+/* Flip the direction when the button is clicked */
+dirToggle.addEventListener("click", () => {
+  const isRTL = document.documentElement.dir === "rtl";
+  setDirection(isRTL ? "ltr" : "rtl");
+});
+
+/* Use the saved direction (or left-to-right the first time) */
+setDirection(localStorage.getItem(DIRECTION_KEY) || "ltr");
