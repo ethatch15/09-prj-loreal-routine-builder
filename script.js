@@ -1,5 +1,6 @@
 /* Get references to DOM elements */
 const categoryFilter = document.getElementById("categoryFilter");
+const productSearch = document.getElementById("productSearch");
 const productsContainer = document.getElementById("productsContainer");
 const selectedProductsList = document.getElementById("selectedProductsList");
 const chatForm = document.getElementById("chatForm");
@@ -48,10 +49,10 @@ let selectedProducts = [];
 /* IDs of the products whose descriptions are currently open */
 let openDescriptions = [];
 
-/* Show initial placeholder until user selects a category */
+/* Show initial placeholder until user picks a category or searches */
 productsContainer.innerHTML = `
   <div class="placeholder-message">
-    Select a category to view products
+    Choose a category or search to view products
   </div>
 `;
 
@@ -218,19 +219,60 @@ function toggleProduct(productId) {
   displaySelectedProducts();
 }
 
-/* Filter and display products when category changes */
-categoryFilter.addEventListener("change", async (e) => {
+/* Show the products that match BOTH the category and the search box.
+   This runs whenever either one changes. */
+async function updateProductGrid() {
   const products = await loadProducts();
-  const selectedCategory = e.target.value;
+  const selectedCategory = categoryFilter.value; // "" means All Categories
 
-  /* filter() creates a new array containing only products
-     where the category matches what the user selected */
-  const filteredProducts = products.filter(
-    (product) => product.category === selectedCategory
-  );
+  // toLowerCase() so "CERAVE", "CeraVe", and "cerave" all match
+  const searchText = productSearch.value.trim().toLowerCase();
+
+  // Nothing chosen and nothing typed yet: show the starting message
+  if (selectedCategory === "" && searchText === "") {
+    currentProducts = [];
+    productsContainer.innerHTML = `
+      <div class="placeholder-message">
+        Choose a category or search to view products
+      </div>
+    `;
+    return;
+  }
+
+  /* filter() creates a new array with only the products that pass
+     BOTH checks below */
+  const filteredProducts = products.filter((product) => {
+    // Check 1: category matches (or "All Categories" is chosen)
+    const categoryMatches =
+      selectedCategory === "" || product.category === selectedCategory;
+
+    // Check 2: the search text appears in the name, brand, category,
+    // or description (an empty search box matches everything)
+    const searchableText = `${product.name} ${product.brand} ${product.category} ${product.description}`.toLowerCase();
+    const searchMatches = searchableText.includes(searchText);
+
+    return categoryMatches && searchMatches;
+  });
+
+  // No matches: tell the user instead of showing an empty grid
+  if (filteredProducts.length === 0) {
+    currentProducts = [];
+    productsContainer.innerHTML = `<div class="placeholder-message"></div>`;
+
+    // Use textContent for the user's words so typed HTML is shown as plain text
+    productsContainer.querySelector(".placeholder-message").textContent =
+      `No products match "${productSearch.value.trim()}". Try another word or category.`;
+    return;
+  }
 
   displayProducts(filteredProducts);
-});
+}
+
+/* Update the grid when the category changes... */
+categoryFilter.addEventListener("change", updateProductGrid);
+
+/* ...and every time the user types in the search box */
+productSearch.addEventListener("input", updateProductGrid);
 
 /* Show or hide a product's description */
 function toggleDescription(productId) {

@@ -536,3 +536,47 @@ body {
 .clear-all-btn[hidden] {
   display: none;
 }
+
+/* —— product search + category, side by side —— */
+.search-section {
+  gap: 12px;
+  flex-wrap: wrap; /* stack them on small screens */
+}
+
+/* The search box takes the bigger share of the row */
+.product-search {
+  flex: 2 1 280px;
+  position: relative; /* lets the magnifying glass sit inside the box */
+}
+
+.search-section select {
+  flex: 1 1 200px;
+  width: auto;
+}
+
+/* Magnifying-glass icon inside the search box */
+.product-search i {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #888;
+  pointer-events: none; /* clicks go through to the input */
+}
+
+.product-search input {
+  width: 100%;
+  padding: 16px 16px 16px 44px; /* extra left padding for the icon */
+  font-family: inherit;
+  font-size: 18px;
+  border: 2px solid #000;
+  border-radius: 8px;
+}
+
+/* Gold focus ring for both the search box and the dropdown */
+.product-search input:focus,
+.search-section select:focus {
+  outline: none;
+  border-color: var(--loreal-gold);
+  box-shadow: 0 0 0 3px rgba(227, 165, 53, 0.25);
+}
