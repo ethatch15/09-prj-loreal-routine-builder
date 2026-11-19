@@ -10,6 +10,7 @@ const sendBtn = document.getElementById("sendBtn");
 const generateRoutineBtn = document.getElementById("generateRoutine");
 const clearAllBtn = document.getElementById("clearAll");
 const dirToggle = document.getElementById("dirToggle");
+const webSearchToggle = document.getElementById("webSearchToggle");
 const dirToggleLabel = document.getElementById("dirToggleLabel");
 
 /* The address of your Cloudflare Worker.
@@ -33,6 +34,7 @@ Rules:
 - Do not give medical advice. For serious skin conditions, suggest seeing a dermatologist.
 - Write in plain text only, in every language. Do not use Markdown symbols like ** or #. Use numbered steps and simple headings like "Morning:" and "Evening:".
 - Keep it friendly and easy to follow.
+- When web search is available, use it for current information (new products, prices, availability, recent news) and prefer official L'Oréal brand websites and other trusted sources. Sources are shown to the user separately, so don't paste raw links in your answer.
 - Reply in the same language the user writes in (for example, answer in Arabic if they write in Arabic).`;
 
 /* Conversation history.
@@ -369,12 +371,16 @@ function addMessage(role, text) {
 }
 
 /* sendToAI() sends the whole conversation to the Cloudflare Worker
-   and returns the AI's reply as text. */
+   and returns the AI's reply: { content: "the text", sources: [...] } */
 async function sendToAI() {
   const response = await fetch(WORKER_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ messages: messages }),
+    body: JSON.stringify({
+      messages: messages,
+      // true = the Worker lets the AI search the web for current info
+      webSearch: webSearchToggle.checked,
+    }),
   });
 
   const data = await response.json();
@@ -384,7 +390,41 @@ async function sendToAI() {
     throw new Error(data.error.message);
   }
 
-  return data.choices[0].message.content;
+  const message = data.choices[0].message;
+  return {
+    content: message.content,
+    sources: message.sources || [], // only web search answers have sources
+  };
+}
+
+/* showSources() adds a "Sources" list of clickable links under an AI bubble */
+function showSources(bubble, sources) {
+  if (sources.length === 0) {
+    return; // no web search, or no links were used
+  }
+
+  const sourcesDiv = document.createElement("div");
+  sourcesDiv.classList.add("sources");
+
+  const heading = document.createElement("p");
+  heading.classList.add("sources-title");
+  heading.textContent = "Sources";
+  sourcesDiv.appendChild(heading);
+
+  const list = document.createElement("ol");
+  sources.forEach((source) => {
+    const item = document.createElement("li");
+    const link = document.createElement("a");
+    link.href = source.url;
+    link.textContent = source.title;
+    link.target = "_blank"; // open in a new tab
+    link.rel = "noopener noreferrer"; // safer for links that open new tabs
+    item.appendChild(link);
+    list.appendChild(item);
+  });
+  sourcesDiv.appendChild(list);
+
+  bubble.appendChild(sourcesDiv);
 }
 
 /* Generate Routine button */
@@ -428,10 +468,11 @@ generateRoutineBtn.addEventListener("click", async () => {
   try {
     // 4. Send everything to the AI and show the routine it returns
     const routine = await sendToAI();
-    replyDiv.textContent = routine;
+    replyDiv.textContent = routine.content;
+    showSources(replyDiv, routine.sources); // links, if the web was searched
 
     // Save the AI's routine in the history for follow-up questions
-    messages.push({ role: "assistant", content: routine });
+    messages.push({ role: "assistant", content: routine.content });
   } catch (error) {
     console.error("Routine request failed:", error);
     replyDiv.textContent = `⚠️ Sorry, something went wrong: ${error.message}`;
@@ -469,10 +510,11 @@ chatForm.addEventListener("submit", async (e) => {
     // 2. Send the WHOLE conversation (system prompt, routine, past
     //    questions and answers) so the AI understands the follow-up
     const reply = await sendToAI();
-    replyDiv.textContent = reply;
+    replyDiv.textContent = reply.content;
+    showSources(replyDiv, reply.sources); // links, if the web was searched
 
     // 3. Save the answer in the history for the next question
-    messages.push({ role: "assistant", content: reply });
+    messages.push({ role: "assistant", content: reply.content });
   } catch (error) {
     console.error("Chat request failed:", error);
     replyDiv.textContent = `⚠️ Sorry, something went wrong: ${error.message}`;

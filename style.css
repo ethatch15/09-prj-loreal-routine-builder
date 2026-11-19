@@ -624,3 +624,70 @@ body {
 [dir="rtl"] .chat-form button i {
   transform: scaleX(-1);
 }
+
+/* —— web search toggle + sources —— */
+.web-search-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #444;
+  cursor: pointer;
+}
+
+.web-search-toggle input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--loreal-red); /* red checkbox */
+  cursor: pointer;
+}
+
+.web-search-toggle i {
+  color: var(--loreal-gold);
+}
+
+/* "Sources" box at the bottom of an AI bubble */
+.sources {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #eee;
+  font-size: 13px;
+  white-space: normal; /* normal spacing for the link list */
+}
+
+.sources-title {
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.sources ol {
+  padding-inline-start: 20px; /* works in LTR and RTL */
+}
+
+.sources a {
+  color: var(--loreal-red);
+  overflow-wrap: anywhere; /* long links wrap instead of overflowing */
+}
+
+.sources a:hover {
+  color: #000;
+}
+
+/* —— small screens: give the chat more room —— */
+@media (max-width: 600px) {
+  .page-wrapper {
+    width: 94%;
+  }
+
+  .chatbox {
+    padding: 16px;
+  }
+
+  .chat-window {
+    padding: 12px;
+  }
+
+  .msg {
+    max-width: 92%; /* bubbles can use almost the full width */
+  }
+}
