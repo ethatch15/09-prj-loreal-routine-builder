@@ -45,7 +45,13 @@
 
       <!-- Selected Products -->
       <div class="selected-products">
-        <h2>Selected Products</h2>
+        <!-- Heading row with a "Clear all" button (hidden when the list is empty) -->
+        <div class="selected-header">
+          <h2>Selected Products</h2>
+          <button id="clearAll" class="clear-all-btn" hidden>
+            <i class="fa-solid fa-trash-can"></i> Clear all
+          </button>
+        </div>
         <div id="selectedProductsList"></div>
         <button id="generateRoutine" class="generate-btn">
           <i class="fa-solid fa-wand-magic-sparkles"></i> Generate Routine

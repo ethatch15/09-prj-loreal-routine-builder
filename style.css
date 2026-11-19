@@ -493,3 +493,46 @@ body {
   opacity: 0.6;
   cursor: wait;
 }
+
+/* —— Selected Products heading row + Clear all button —— */
+.selected-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+/* The h2 already has a bottom margin; the header row handles spacing now */
+.selected-header h2 {
+  margin-bottom: 0;
+}
+
+.clear-all-btn {
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 7px 12px;
+  border: 1px solid #ccc;
+  border-radius: 999px;
+  background: #fff;
+  color: #333;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.clear-all-btn:hover,
+.clear-all-btn:focus-visible {
+  background: var(--loreal-red);
+  border-color: var(--loreal-red);
+  color: #fff;
+  outline: none;
+}
+
+/* Make sure "hidden" really hides the button */
+.clear-all-btn[hidden] {
+  display: none;
+}

@@ -7,6 +7,7 @@ const chatWindow = document.getElementById("chatWindow");
 const userInput = document.getElementById("userInput");
 const sendBtn = document.getElementById("sendBtn");
 const generateRoutineBtn = document.getElementById("generateRoutine");
+const clearAllBtn = document.getElementById("clearAll");
 
 /* The address of your Cloudflare Worker.
    The Worker holds the OpenAI API key and forwards our request to OpenAI,
@@ -53,6 +54,38 @@ productsContainer.innerHTML = `
     Select a category to view products
   </div>
 `;
+
+/* —— Saving selections with localStorage ——
+   localStorage is a small storage box in the browser that keeps data
+   even after the page is reloaded or closed. It can only store text,
+   so we turn our array into text with JSON.stringify() to save it,
+   and back into an array with JSON.parse() to load it. */
+const STORAGE_KEY = "lorealSelectedProducts";
+
+/* Save the current selections to localStorage */
+function saveSelections() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(selectedProducts));
+}
+
+/* Load saved selections (or an empty list if nothing was saved yet) */
+function loadSavedSelections() {
+  const savedText = localStorage.getItem(STORAGE_KEY);
+
+  // Nothing saved yet, so start with an empty list
+  if (!savedText) {
+    return [];
+  }
+
+  // try/catch: if the saved text is somehow broken, start fresh instead of crashing
+  try {
+    return JSON.parse(savedText);
+  } catch (error) {
+    return [];
+  }
+}
+
+/* Fill the selected list with anything saved from a previous visit */
+selectedProducts = loadSavedSelections();
 
 /* Load product data from JSON file */
 async function loadProducts() {
@@ -135,6 +168,9 @@ function displayProducts(products) {
 /* Show the selected products in the "Selected Products" section */
 function displaySelectedProducts() {
   // If nothing is selected, show a friendly hint instead
+  // Only show "Clear all" when there is something to clear
+  clearAllBtn.hidden = selectedProducts.length === 0;
+
   if (selectedProducts.length === 0) {
     selectedProductsList.innerHTML = `
       <p class="empty-selection">No products selected yet. Click a product card or its Select button to add it.</p>
@@ -173,6 +209,9 @@ function toggleProduct(productId) {
     const product = allProducts.find((item) => item.id === productId);
     selectedProducts.push(product);
   }
+
+  // Save the new selection so it survives a page reload
+  saveSelections();
 
   // Redraw both sections so they match the new selection
   displayProducts(currentProducts);
@@ -248,7 +287,18 @@ selectedProductsList.addEventListener("click", (e) => {
   }
 });
 
-/* Show the empty "Selected Products" message when the page first loads */
+/* "Clear all" removes every selected product at once */
+clearAllBtn.addEventListener("click", () => {
+  selectedProducts = []; // empty the list
+  saveSelections(); // save the empty list to localStorage
+
+  // Redraw both sections
+  displayProducts(currentProducts);
+  displaySelectedProducts();
+});
+
+/* When the page first loads, show any saved selections
+   (or the "No products selected yet" message) */
 displaySelectedProducts();
 
 /* addMessage() puts one chat bubble in the chat window.
