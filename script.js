@@ -41,6 +41,9 @@ let allProducts = [];
 let currentProducts = [];
 let selectedProducts = [];
 
+/* IDs of the products whose descriptions are currently open */
+let openDescriptions = [];
+
 /* Show initial placeholder until user selects a category */
 productsContainer.innerHTML = `
   <div class="placeholder-message">
@@ -72,24 +75,51 @@ function displayProducts(products) {
 
   productsContainer.innerHTML = products
     .map((product) => {
-      // Add the "selected" class if this product is already picked
-      const selectedClass = isSelected(product.id) ? "selected" : "";
+      // Is this product picked? Is its description open?
+      const selected = isSelected(product.id);
+      const descriptionOpen = openDescriptions.includes(product.id);
 
-      // role="button" + tabindex="0" let keyboard users select cards too.
-      // aria-pressed tells screen readers whether the card is selected.
+      // Change the classes, labels, and icons based on those answers
+      const selectedClass = selected ? "selected" : "";
+      const selectLabel = selected ? "Selected" : "Select";
+      const selectIcon = selected ? "fa-check" : "fa-plus";
+      const detailsLabel = descriptionOpen ? "Hide details" : "Details";
+      const detailsIcon = descriptionOpen ? "fa-chevron-up" : "fa-chevron-down";
+
+      // Each card has two real buttons, so keyboard and screen reader
+      // users can use them too:
+      // - Select (aria-pressed says whether it's selected)
+      // - Details (aria-expanded says whether the description is showing)
       return `
-    <div
-      class="product-card ${selectedClass}"
-      data-id="${product.id}"
-      role="button"
-      tabindex="0"
-      aria-pressed="${isSelected(product.id)}"
-    >
+    <div class="product-card ${selectedClass}" data-id="${product.id}">
       <img src="${product.image}" alt="${product.name}">
       <div class="product-info">
         <h3>${product.name}</h3>
-        <p>${product.brand}</p>
+        <p class="product-brand">${product.brand}</p>
+
+        <div class="card-actions">
+          <button class="select-btn" aria-pressed="${selected}">
+            <i class="fa-solid ${selectIcon}"></i> ${selectLabel}
+          </button>
+          <button
+            class="details-btn"
+            aria-expanded="${descriptionOpen}"
+            aria-controls="desc-${product.id}"
+          >
+            ${detailsLabel} <i class="fa-solid ${detailsIcon}"></i>
+          </button>
+        </div>
       </div>
+
+      <!-- The description is hidden until the Details button is clicked -->
+      <p
+        class="product-description"
+        id="desc-${product.id}"
+        ${descriptionOpen ? "" : "hidden"}
+      >
+        ${product.description}
+      </p>
+
       <span class="selected-badge" aria-hidden="true">
         <i class="fa-solid fa-check"></i>
       </span>
@@ -104,7 +134,7 @@ function displaySelectedProducts() {
   // If nothing is selected, show a friendly hint instead
   if (selectedProducts.length === 0) {
     selectedProductsList.innerHTML = `
-      <p class="empty-selection">No products selected yet. Click a product card to add it.</p>
+      <p class="empty-selection">No products selected yet. Click a product card or its Select button to add it.</p>
     `;
     return;
   }
@@ -160,23 +190,52 @@ categoryFilter.addEventListener("change", async (e) => {
   displayProducts(filteredProducts);
 });
 
-/* Clicking a product card selects or unselects it.
-   We listen on the whole grid and then find which card was clicked. */
+/* Show or hide a product's description */
+function toggleDescription(productId) {
+  if (openDescriptions.includes(productId)) {
+    // Already open, so close it
+    openDescriptions = openDescriptions.filter((id) => id !== productId);
+  } else {
+    // Closed, so open it
+    openDescriptions.push(productId);
+  }
+  displayProducts(currentProducts);
+}
+
+/* Handle clicks anywhere in the product grid.
+   We listen on the whole grid and then figure out what was clicked. */
 productsContainer.addEventListener("click", (e) => {
   const card = e.target.closest(".product-card");
-  if (card) {
-    toggleProduct(Number(card.dataset.id));
+  // Ignore clicks outside a card, or on the description text
+  // (so people can read or highlight it without selecting the product)
+  if (!card || e.target.closest(".product-description")) {
+    return;
+  }
+  const productId = Number(card.dataset.id);
+
+  if (e.target.closest(".details-btn")) {
+    // The Details button opens/closes the description (it does NOT select)
+    toggleDescription(productId);
+    focusCardButton(productId, ".details-btn");
+  } else {
+    // Clicking the Select button, or anywhere else on the card, selects it
+    toggleProduct(productId);
+    if (e.target.closest(".select-btn")) {
+      focusCardButton(productId, ".select-btn");
+    }
   }
 });
 
-/* Let keyboard users select a card with Enter or Space */
-productsContainer.addEventListener("keydown", (e) => {
-  const card = e.target.closest(".product-card");
-  if (card && (e.key === "Enter" || e.key === " ")) {
-    e.preventDefault(); // stop Space from scrolling the page
-    toggleProduct(Number(card.dataset.id));
+/* After the grid is redrawn, put keyboard focus back on the same button,
+   so keyboard users don't lose their place */
+function focusCardButton(productId, buttonClass) {
+  const button = productsContainer.querySelector(
+    `.product-card[data-id="${productId}"] ${buttonClass}`
+  );
+  if (button) {
+    button.focus();
   }
-});
+}
 
 /* Clicking the × on a selected product removes it */
 selectedProductsList.addEventListener("click", (e) => {

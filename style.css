@@ -384,3 +384,106 @@ body {
   opacity: 0.6;
   cursor: wait;
 }
+
+/* —— product card buttons + description —— */
+
+/* Let the description drop onto its own full-width row under the card */
+.product-card {
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.product-card img {
+  width: 90px;
+  height: 90px;
+}
+
+.product-card .product-info {
+  min-width: 0; /* lets long product names wrap instead of overflowing */
+  min-height: 90px;
+  padding-right: 22px; /* leaves room for the check badge */
+}
+
+/* Row that holds the Select and Details buttons */
+.card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.select-btn,
+.details-btn {
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+/* Select: outlined red; turns solid red once the product is selected */
+.select-btn {
+  background: #fff;
+  color: var(--loreal-red);
+  border: 1px solid var(--loreal-red);
+}
+
+.select-btn:hover,
+.select-btn[aria-pressed="true"] {
+  background: var(--loreal-red);
+  color: #fff;
+}
+
+/* Details: quiet gray outline, gold on hover */
+.details-btn {
+  background: #fff;
+  color: #333;
+  border: 1px solid #ccc;
+}
+
+.details-btn:hover,
+.details-btn[aria-expanded="true"] {
+  border-color: var(--loreal-gold);
+  color: #000;
+}
+
+.select-btn:focus-visible,
+.details-btn:focus-visible {
+  outline: 2px solid var(--loreal-gold);
+  outline-offset: 2px;
+}
+
+/* The description text, full width under the image and name */
+.product-card .product-description {
+  flex-basis: 100%;
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 1px solid #eee;
+  font-size: 13px;
+  line-height: 1.55;
+  color: #444;
+  cursor: auto; /* plain text, not a "click to select" area */
+}
+
+/* Make sure "hidden" really hides it (our flex rules could override it) */
+.product-description[hidden] {
+  display: none;
+}
+
+/* On tablets and phones, show 2 cards per row, then 1 */
+@media (max-width: 800px) {
+  .product-card {
+    flex-basis: calc(50% - 10px);
+  }
+}
+
+@media (max-width: 520px) {
+  .product-card {
+    flex-basis: 100%;
+  }
+}
