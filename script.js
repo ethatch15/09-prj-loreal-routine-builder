@@ -392,7 +392,9 @@ async function sendToAI() {
 
   const message = data.choices[0].message;
   return {
-    content: message.content,
+    // replaceAll removes any leftover "**" bold markers the AI adds,
+    // since the chat window shows plain text
+    content: message.content.replaceAll("**", ""),
     sources: message.sources || [], // only web search answers have sources
   };
 }
