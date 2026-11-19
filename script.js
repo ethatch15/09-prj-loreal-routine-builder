@@ -4,6 +4,34 @@ const productsContainer = document.getElementById("productsContainer");
 const selectedProductsList = document.getElementById("selectedProductsList");
 const chatForm = document.getElementById("chatForm");
 const chatWindow = document.getElementById("chatWindow");
+const generateRoutineBtn = document.getElementById("generateRoutine");
+
+/* The address of your Cloudflare Worker.
+   The Worker holds the OpenAI API key and forwards our request to OpenAI,
+   so no key ever goes in this file. This URL is safe to share. */
+const WORKER_URL = "https://loreal-chatbot.ethatch15.workers.dev/";
+
+/* The system prompt tells the AI who it is and what it may talk about.
+   It is always the first message in the conversation. */
+const systemPrompt = `You are a friendly, expert L'Oréal beauty advisor. You build personalized routines using products from L'Oréal's family of brands (such as CeraVe, L'Oréal Paris, Garnier, Lancôme, La Roche-Posay, Vichy, and more).
+
+When the user sends you a list of selected products as JSON:
+- Build a clear step-by-step routine using ONLY those products.
+- Split it into Morning and/or Evening (or a single routine for haircare, makeup, or fragrance), whichever makes sense.
+- For each step, name the product and say briefly how and why to use it.
+- If a product doesn't fit a routine well, or an important step is missing (like sunscreen in the morning), say so kindly.
+
+Rules:
+- Only talk about the routine, the selected products, and beauty topics like skincare, haircare, makeup, fragrance, and grooming. Politely decline anything unrelated.
+- Do not give medical advice. For serious skin conditions, suggest seeing a dermatologist.
+- Write in plain text only. Do not use Markdown symbols like ** or #. Use numbered steps and simple headings like "Morning:" and "Evening:".
+- Keep it friendly and easy to follow.`;
+
+/* Conversation history.
+   OpenAI doesn't remember past messages on its own, so we keep EVERY
+   message here and send the whole array each time. That lets the AI
+   answer follow-up questions about the routine it already made. */
+const messages = [{ role: "system", content: systemPrompt }];
 
 /* Arrays that keep track of our products:
    - allProducts: every product from products.json (loaded once)
@@ -161,9 +189,106 @@ selectedProductsList.addEventListener("click", (e) => {
 /* Show the empty "Selected Products" message when the page first loads */
 displaySelectedProducts();
 
+/* addMessage() puts one chat bubble in the chat window.
+   role is "user" or "ai" — it matches the .msg.user / .msg.ai styles.
+   It returns the new bubble so we can change its text later. */
+function addMessage(role, text) {
+  const messageDiv = document.createElement("div");
+  messageDiv.classList.add("msg", role);
+
+  // textContent (not innerHTML) shows the text exactly as written
+  messageDiv.textContent = text;
+
+  chatWindow.appendChild(messageDiv);
+
+  // Scroll down so the newest message is visible
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+
+  return messageDiv;
+}
+
+/* sendToAI() sends the whole conversation to the Cloudflare Worker
+   and returns the AI's reply as text. */
+async function sendToAI() {
+  const response = await fetch(WORKER_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ messages: messages }),
+  });
+
+  const data = await response.json();
+
+  // If OpenAI sent back an error (bad key, no credits, etc.), stop here
+  if (data.error) {
+    throw new Error(data.error.message);
+  }
+
+  return data.choices[0].message.content;
+}
+
+/* Generate Routine button */
+generateRoutineBtn.addEventListener("click", async () => {
+  // 1. Make sure at least one product is selected
+  if (selectedProducts.length === 0) {
+    addMessage(
+      "ai",
+      "Please select at least one product first, then click Generate Routine."
+    );
+    return;
+  }
+
+  // 2. Collect only the details the AI needs from each selected product
+  const productData = selectedProducts.map((product) => ({
+    name: product.name,
+    brand: product.brand,
+    category: product.category,
+    description: product.description,
+  }));
+
+  // 3. Build the request. JSON.stringify turns the array into text;
+  //    the "null, 2" part just makes it neatly indented.
+  const request = `Please build a personalized routine using these selected products:\n${JSON.stringify(
+    productData,
+    null,
+    2
+  )}`;
+
+  // Add the request to the conversation history
+  messages.push({ role: "user", content: request });
+
+  // Show a short, friendly version in the chat (not the raw JSON)
+  const productNames = selectedProducts.map((product) => product.name);
+  addMessage("user", `Build my routine with: ${productNames.join(", ")}`);
+
+  // Show a "working" bubble and disable the button so it isn't clicked twice
+  const replyDiv = addMessage("ai", "Building your routine…");
+  generateRoutineBtn.disabled = true;
+
+  try {
+    // 4. Send everything to the AI and show the routine it returns
+    const routine = await sendToAI();
+    replyDiv.textContent = routine;
+
+    // Save the AI's routine in the history for follow-up questions
+    messages.push({ role: "assistant", content: routine });
+  } catch (error) {
+    console.error("Routine request failed:", error);
+    replyDiv.textContent = `⚠️ Sorry, something went wrong: ${error.message}`;
+
+    // Remove the unanswered request so the history stays tidy
+    messages.pop();
+  }
+
+  // Turn the button back on and scroll to the bottom
+  generateRoutineBtn.disabled = false;
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+});
+
 /* Chat form submission handler - placeholder for OpenAI integration */
 chatForm.addEventListener("submit", (e) => {
   e.preventDefault();
 
-  chatWindow.innerHTML = "Connect to the OpenAI API for a response!";
+  // Follow-up questions get connected in the next step.
+  // addMessage() adds a bubble instead of wiping out the routine.
+  addMessage("ai", "Follow-up questions are coming soon!");
 });

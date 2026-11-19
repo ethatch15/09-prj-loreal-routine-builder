@@ -9,6 +9,7 @@
 body {
   font-family: "Montserrat", Arial, Helvetica, sans-serif;
   color: #333;
+  background: #fff; /* always a white page, even if the browser is in dark mode */
   display: flex;
   justify-content: center;
 }
@@ -75,7 +76,7 @@ body {
   padding: 20px;
   font-size: 18px;
   line-height: 1.5;
-  height: 250px;
+  height: 420px; /* taller so routines are easy to read */
   overflow-y: auto;
   background: #fafafa;
   margin-bottom: 20px;
@@ -342,4 +343,44 @@ body {
   background: var(--loreal-red);
   color: #fff;
   outline: none;
+}
+
+/* —— chat bubbles —— */
+.chat-window {
+  display: flex;
+  flex-direction: column; /* stack bubbles top to bottom */
+  gap: 14px;
+  font-size: 16px;
+}
+
+.msg {
+  max-width: 80%;
+  padding: 12px 16px;
+  border-radius: 16px;
+  line-height: 1.5;
+  white-space: pre-line; /* keeps the line breaks in the AI's routine */
+  overflow-wrap: anywhere;
+}
+
+/* User messages: red bubble on the right */
+.msg.user {
+  align-self: flex-end;
+  background: var(--loreal-red);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+
+/* AI messages: white bubble with a gold edge on the left */
+.msg.ai {
+  align-self: flex-start;
+  background: #fff;
+  border: 1px solid #eee;
+  border-left: 3px solid var(--loreal-gold);
+  border-bottom-left-radius: 4px;
+}
+
+/* Dim the Generate button while the AI is working */
+.generate-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
 }
